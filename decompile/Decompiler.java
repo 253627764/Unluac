@@ -303,7 +303,7 @@ public class Decompiler {
       case FORPREP:
       case TFORCALL:
       case TFORLOOP:
-	  case TESTNIL:
+      case TESTNIL:
         /* Do nothing ... handled with branches */
         break;
       case SETLIST: {
@@ -501,19 +501,19 @@ public class Decompiler {
         if(assign != null) {
           
         } else if(!newLocals.isEmpty() && code.op(line) != Op.FORPREP) {
-           if(code.op(line) == Op.JMP) {
-             Op next = code.op(line + 1 + code.sBx(line));
-             if(next == Op.TFORCALL || next == Op.TFORLOOP)
-               continue;
-           }
-           assign = new Assignment();
-           assign.declare(newLocals.get(0).begin);
-           for(Declaration decl : newLocals) {
-             assign.addLast(new VariableTarget(decl), r.getValue(decl.register, line));
+            if(code.op(line) == Op.JMP) {
+                Op next = code.op(line + 1 + code.sBx(line));
+                if(next == Op.TFORCALL || next == Op.TFORLOOP)
+                  continue;
+              }
+              assign = new Assignment();
+              assign.declare(newLocals.get(0).begin);
+              for(Declaration decl : newLocals) {
+                assign.addLast(new VariableTarget(decl), r.getValue(decl.register, line));
+              }
+              blockStack.peek().addStatement(assign);
             }
-           blockStack.peek().addStatement(assign);
           }
-        }
       if(blockHandler != null) {
         //System.out.println("-- repeat @" + line);
         line--;
@@ -706,23 +706,24 @@ public class Decompiler {
               }
               skip[tline] = true;
               skip[tline + 1] = true;
-              blocks.add(new TForBlock(function, line  1, tline  2, A, C, r, false));
+              blocks.add(new TForBlock(function, line + 1, tline + 2, A, C, r, false));
             } else if(code.op(tline) == Op.TFORCALL && !skip[tline]) {
               // 5.2 official: R(A+3), ... ,R(A+C+2) := R(A+0)(R(A+1), R(A+2))
               // 5.1 patched:  R(A+0), ..., R(A+C-2) := R(A-3)(R(A-2), R(A-1))
               int A = code.A(tline) - 3; // compensate
               int C = code.C(tline) - 1;
               if(C <= 0) throw new IllegalStateException();
-              if(tline  1  code.sBx(tline  1) != line) throw new IllegalStateException();
-              r.setInternalLoopVariable(A  0, line, tline - 1);
-              r.setInternalLoopVariable(A  1, line, tline - 1);
-              r.setInternalLoopVariable(A  2, line, tline - 1);
+              if(tline + 1 + code.sBx(tline + 1) != line) throw new IllegalStateException();
+              r.setInternalLoopVariable(A + 0, line, tline - 1);
+              r.setInternalLoopVariable(A + 1, line, tline - 1);
+              r.setInternalLoopVariable(A + 2, line, tline - 1);
               for(int index = 1; index <= C; index++) {
-                r.setExplicitLoopVariable(A  index, line, tline - 1);
+                r.setExplicitLoopVariable(A + index, line, tline - 1);
               }
               skip[tline] = true;
-              skip[tline  1] = true;
-              blocks.add(new TForBlock(function, line, tline  2, A, C, r, true));              
+              skip[tline + 1] = true;
+              blocks.add(new TForBlock(function, line, tline + 2, A, C, r, true));
+
             } else if(code.sBx(line) == 2 && code.op(line + 1) == Op.LOADBOOL && code.C(line + 1) != 0) {
               /* This is the tail of a boolean set with a compare node and assign node */
               blocks.add(new BooleanIndicator(function, line));
@@ -819,6 +820,11 @@ public class Decompiler {
             if(stack.peek() instanceof TestNode) {
               isAssignNode = true;
               assignEnd += 1;
+            }
+          } else if(assignEnd - 1 >= 1 && code.op(assignEnd) == Op.LOADBOOL && code.C(assignEnd) != 0 && code.op(assignEnd - 1) == Op.JMP && code.sBx(assignEnd - 1) == 2) {
+            if(stack.peek() instanceof TestNode) {
+              isAssignNode = true;
+              assignEnd += 2;
             }
           } else if(assignEnd - 1 >= 1 && r.isLocal(getAssignment(assignEnd - 1), assignEnd - 1) && assignEnd > stack.peek().line) {
             Declaration decl = r.getDeclaration(getAssignment(assignEnd - 1), assignEnd - 1);
@@ -1225,7 +1231,7 @@ public class Decompiler {
       case FORPREP:
       case TFORCALL:
       case TFORLOOP:
-	  case TESTNIL:
+      case TESTNIL:
       case CLOSE:
         return true;
       case SELF:
@@ -1310,7 +1316,7 @@ public class Decompiler {
       case FORPREP:
       case TFORCALL:
       case TFORLOOP:
-	  case TESTNIL:
+      case TESTNIL:
       case CLOSE:
         return -1;
       case SELF:

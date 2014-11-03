@@ -46,7 +46,7 @@ public class OpcodeMap {
       map[36] = Op.CLOSURE;
       map[37] = Op.VARARG;
 	  map[38] = Op.TESTNIL;
-	  map[39] = TFORCALL;
+	  map[39] = Op.TFORCALL;
     } else {
       map = new Op[40];
       map[0] = Op.MOVE;
